@@ -21,25 +21,28 @@ class FirebaseAuthService {
   }
 
   /// Registers a new user with email, password, and an optional display name.
-  Future<User?> register(String email, String password,
-      {String? displayName}) async {
+  Future<User?> register(String email, String password, String name) async {
     try {
       final UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      User? userObj = userCredential.user;
 
       // Update the user's display name if provided
-      if (displayName != null && displayName.isNotEmpty) {
-        await userCredential.user?.updateDisplayName(displayName);
+      if (userObj != null && name.isNotEmpty) {
+        await userObj.updateDisplayName(name);
+      // Reload user data to ensure we have the latest info
+        await userObj.reload();
       }
 
       // Send email verification
-      await userCredential.user?.sendEmailVerification();
+      await userObj?.sendEmailVerification();
 
-      return userCredential.user;
+      return userObj;
     } catch (e) {
+      print('Error during registration: $e');
       throw _mapFirebaseAuthError(e);
     }
   }

@@ -12,6 +12,7 @@ class SignupPage extends StatefulWidget {
 
 class SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();  // Add this line
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -32,6 +33,7 @@ class SignupPageState extends State<SignupPage> {
         final user = await _authService.register(
           _emailController.text.trim(),
           _passwordController.text.trim(),
+          _nameController.text.trim(),
         );
 
         print(user);
@@ -45,7 +47,12 @@ class SignupPageState extends State<SignupPage> {
         }
       } catch (e) {
         if (mounted) {
-          ToastUtil.failedToast("Registration Failed");
+          // ToastUtil.failedToast("Registration Failed");
+          String errorMessage = "Registration Failed";
+          if (e.toString().contains('email-already-in-use')) {
+            errorMessage = "This email is already registered";
+          }
+          ToastUtil.failedToast(errorMessage);
         }
       } finally {
         if (mounted) {
@@ -73,6 +80,16 @@ class SignupPageState extends State<SignupPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    hintText: 'Enter your name',
+                    prefixIcon: Icon(Icons.person),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _emailController,
@@ -201,6 +218,7 @@ class SignupPageState extends State<SignupPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 }

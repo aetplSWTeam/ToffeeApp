@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
-import 'package:toffee/widgets/bottom_navbar.dart';
+import '../widgets/bottom_navbar.dart';
 import '../services/purchase_service.dart'; // Updated import for the renamed service
 import '../utils/toast_util.dart'; // Import the ToastUtil class
 

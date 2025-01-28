@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import for FirebaseAuth
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../services/purchase_service.dart';
 
 class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+  const CalendarScreen({Key? key}) : super(key: key);
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  DateTime today = DateTime.now();
   DateTime selectedDate = DateTime.now(); // Track the selected date
-  Map<String, int> toffeeData = {}; // Data for each date
   String? userId; // Variable to store the userId
+  List<Map<String, dynamic>> events = []; // Events for the selected date
+  final PurchaseService purchaseService = PurchaseService();
 
   @override
   void initState() {
@@ -30,96 +31,122 @@ class _CalendarScreenState extends State<CalendarScreen> {
         setState(() {
           userId = user.uid; // Set the userId
         });
-        fetchToffeeData(); // Fetch toffee data after getting userId
+        fetchEventsForDate(selectedDate); // Fetch events for the current date
       }
     } catch (e) {
       print("Error fetching user ID: $e");
     }
   }
 
-  // Fetch toffee data for the user from Firestore
-  Future<void> fetchToffeeData() async {
+  // Fetch events for the selected date
+  Future<void> fetchEventsForDate(DateTime date) async {
     if (userId == null) return; // Ensure userId is available
 
-    try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('purchases')
-          .doc(userId)
-          .get();
-
-      if (snapshot.exists) {
-        final data = snapshot.data() as Map<String, dynamic>;
-        final purchases = data['purchases'] as Map<String, dynamic>?;
-
-        setState(() {
-          // Convert purchases into a usable map
-          toffeeData = purchases?.map((key, value) => MapEntry(key, value as int)) ?? {};
-        });
-      }
-    } catch (e) {
-      print("Error fetching toffee data: $e");
-    }
-  }
-
-  // Generate 7 dates (today and the next 6 days)
-  List<DateTime> getSevenDays() {
-    return List.generate(7, (index) => today.add(Duration(days: index)));
+    final fetchedEvents = await purchaseService.getPurchasesForDate(userId!, date);
+    setState(() {
+      events = fetchedEvents;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final sevenDays = getSevenDays();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Toffee Calendar"),
+        title: const Text(
+          "Toffee Calendar",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.deepPurple,
       ),
       body: userId == null
           ? const Center(
-              child: CircularProgressIndicator(), // Show loading until userId is fetched
+              child: CircularProgressIndicator(),
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Horizontal calendar UI
+                // Display the selected date
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    "Selected Date: ${DateFormat('yyyy-MM-dd').format(selectedDate)}",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                ),
+
+                // Horizontal scrollable calendar (Show current and upcoming dates)
                 SizedBox(
                   height: 100,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: sevenDays.length,
                     itemBuilder: (context, index) {
-                      final date = sevenDays[index];
-                      final isSelected = date == selectedDate;
+                      // Calculate past and future dates (showing the next 30 days)
+                      final date = DateTime.now().add(Duration(days: index));
+                      final isSelected = date.year == selectedDate.year &&
+                          date.month == selectedDate.month &&
+                          date.day == selectedDate.day;
+                      final isToday = date.year == DateTime.now().year &&
+                          date.month == DateTime.now().month &&
+                          date.day == DateTime.now().day;
 
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            selectedDate = date; // Update selected date
+                            selectedDate = date;
                           });
+                          fetchEventsForDate(selectedDate);
                         },
                         child: Container(
+                          width: 70,
                           margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                          padding: const EdgeInsets.all(12.0),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.deepPurple : Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(10),
+                            shape: BoxShape.circle,
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: [Colors.deepPurple, Colors.purpleAccent],
+                                  )
+                                : null,
+                            color: isSelected
+                                ? null
+                                : isToday
+                                    ? Colors.orangeAccent
+                                    : Colors.grey.shade300,
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.deepPurple.withOpacity(0.5),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ]
+                                : [],
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              const SizedBox(height: 10),
                               Text(
                                 DateFormat.E().format(date), // Day (e.g., Fri)
                                 style: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.black,
+                                  color: isSelected || isToday
+                                      ? Colors.white
+                                      : Colors.black54,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 5),
                               Text(
                                 DateFormat.d().format(date), // Date (e.g., 24)
                                 style: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.black,
+                                  color: isSelected || isToday
+                                      ? Colors.white
+                                      : Colors.black,
                                   fontWeight: FontWeight.bold,
+                                  fontSize: 18,
                                 ),
                               ),
                             ],
@@ -132,16 +159,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
                 const SizedBox(height: 20),
 
-                // Display the user's toffee count for the selected date
-                Center(
-                  child: Text(
-                    "Toffees purchased on ${DateFormat('yyyy-MM-dd').format(selectedDate)}: ${toffeeData[DateFormat('yyyy-MM-dd').format(selectedDate)] ?? 0}",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
+                // Display a list of events for the selected date
+                Expanded(
+                  child: events.isEmpty
+                      ? Center(
+                          child: Text(
+                            "No events for ${DateFormat('yyyy-MM-dd').format(selectedDate)}",
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: events.length,
+                          itemBuilder: (context, index) {
+                            final event = events[index];
+                            return Card(
+                              elevation: 4,
+                              margin: const EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 16.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.deepPurple,
+                                  child: Text(
+                                    "${event['quantity']}",
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                title: Text("Quantity: ${event['quantity']}"),
+                                subtitle: Text("Total Cost: \$${event['totalCost']}"),
+                                trailing: Text(
+                                  DateFormat.Hm().format(
+                                      (event['timestamp'] as Timestamp).toDate()),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),

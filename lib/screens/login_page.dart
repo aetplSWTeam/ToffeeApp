@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:toffee/screens/forgotpassword_screen.dart';
-import 'package:toffee/screens/signup_page.dart';
-import 'package:toffee/utils/toast_util.dart';
+import '../screens/forgotpassword_screen.dart';
+import '../screens/signup_page.dart';
+import '../utils/toast_util.dart';
 import '../services/firebase_auth_service.dart';
 
 class LoginPage extends StatefulWidget {

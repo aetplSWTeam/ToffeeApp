@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:toffee/screens/calender_page.dart';
-import 'package:toffee/screens/toffee_screen.dart';
+import '../screens/calender_page.dart';
+import '../screens/toffee_screen.dart';
 import '../services/purchase_service.dart'; // Import the service class
 
 
@@ -35,11 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundImage: user.photoURL != null
               ? NetworkImage(user.photoURL!) // Use photoUrl from Firebase if available
               : const AssetImage('assets/profile.png') as ImageProvider, // Default image if photoUrl is null
-          radius: 25,
+          radius: 10,
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: FutureBuilder<int>(
               future: PurchaseService().fetchToffeeCount(user.uid), // Pass user.uid to the service method
               builder: (context, snapshot) {
@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildGreetingCard('Welcome Back, ${user.displayName ?? 'User'}!'),
+            _buildGreetingCard('Welcome  Back, ${user.displayName ?? 'User'}!'),
             const SizedBox(height: 20),
             _buildOptionCard('Add Payment Method', Colors.blueAccent, context),
             const SizedBox(height: 20),

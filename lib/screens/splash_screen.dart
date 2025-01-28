@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:toffee/screens/login_page.dart';
+import '../screens/login_page.dart';
 
 
 class SplashScreen extends StatelessWidget {

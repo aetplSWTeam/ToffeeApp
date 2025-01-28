@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:toffee/screens/profile_page.dart';
+import '../screens/profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AccountScreen extends StatelessWidget {

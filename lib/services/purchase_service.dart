@@ -65,6 +65,46 @@ class PurchaseService {
       return 0; // Return 0 in case of an error
     }
   }
+
+  // Fetch purchases for the given userId and filter by current date
+  Future<List<Map<String, dynamic>>> getPurchasesForDate(String userId, DateTime date) async {
+    try {
+      final snapshot = await _firestore
+          .collection('purchases')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      // Filter purchases based on the date (ignoring time)
+      final filteredPurchases = snapshot.docs.where((doc) {
+        final timestamp = (doc.data()['timestamp'] as Timestamp).toDate();
+        return timestamp.year == date.year &&
+            timestamp.month == date.month &&
+            timestamp.day == date.day;
+      }).map((doc) => doc.data()).toList();
+
+      return filteredPurchases;
+    } catch (e) {
+      print("Error fetching purchases: $e");
+      return [];
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 

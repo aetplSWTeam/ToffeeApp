@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class PurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -44,9 +45,6 @@ class PurchaseService {
   }
 
 
-
-
-
   Future<int> fetchToffeeCount(String uid) async {
     try {
       // Get the toffee count from Firestore using the user UID
@@ -89,6 +87,19 @@ class PurchaseService {
       return [];
     }
   }
+  
+
+// get all purchases
+  Future<List<Map<String, dynamic>>> getAllPurchases() async {
+  try {
+    final snapshot = await _firestore.collection('purchases').get();
+
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  } catch (e) {
+    print("Error fetching purchases: $e");
+    return [];
+  }
+}
 }
 
 

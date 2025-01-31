@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:toffee/screens/profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
+  // Function to handle Google Sign-out
+  Future<void> _signOutFromGoogle() async {
+    try {
+      await GoogleSignIn().signOut();
+    } catch (e) {
+      // Handle error if any
+      print('Error signing out from Google: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-   
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Account'),
@@ -116,8 +125,15 @@ class AccountScreen extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () async {
-                                // Sign out the user when confirmed
-                                await FirebaseAuth.instance.signOut();
+                                // Sign out based on the current authentication method
+                                User? user = FirebaseAuth.instance.currentUser;
+                                if (user != null) {
+                                  if (user.providerData[0].providerId == 'google.com') {
+                                    // If signed in via Google
+                                    await _signOutFromGoogle();
+                                  }
+                                  await FirebaseAuth.instance.signOut();
+                                }
                                 // Navigate to the login page after sign out
                                 Navigator.pushReplacementNamed(context, '/login');
                               },

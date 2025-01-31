@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:toffee/widgets/bottom_navbar.dart';
-import '../services/purchase_service.dart'; // Updated import for the renamed service
-import '../utils/toast_util.dart'; // Import the ToastUtil class
+import '../services/payment_service.dart'; // Import Stripe Payment Service
+import '../services/purchase_service.dart';
+import '../utils/toast_util.dart';
 
 class ToffeeScreen extends StatefulWidget {
   const ToffeeScreen({super.key});
@@ -12,13 +13,11 @@ class ToffeeScreen extends StatefulWidget {
 }
 
 class _ToffeeScreenState extends State<ToffeeScreen> {
-  final PurchaseService _purchaseService =
-      PurchaseService(); // Updated class instance
-  final User? _currentUser =
-      FirebaseAuth.instance.currentUser; // Get the current user
+  final PurchaseService _purchaseService = PurchaseService();
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
 
-  int totalToffees = 0; // Total number of toffees
-  int totalPrice = 0; // Total price (price per toffee = 10)
+  int totalToffees = 0;
+  int totalPrice = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +43,7 @@ class _ToffeeScreenState extends State<ToffeeScreen> {
     return GestureDetector(
       onTap: () {
         if (title == 'Buy Toffee') {
-          _showBuyToffeeDialog(context); // Show dialog to enter quantity
+          _showBuyToffeeDialog(context);
         } else if (title == 'Return Toffee') {
           _showToffeeDialog(context, title);
         }
@@ -103,7 +102,7 @@ class _ToffeeScreenState extends State<ToffeeScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: const Text('Cancel'),
             ),
@@ -144,70 +143,49 @@ class _ToffeeScreenState extends State<ToffeeScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: const Text('Cancel'),
             ),
-            // ElevatedButton(
-            //   onPressed: () async {
-            //     setState(() {
-            //       totalToffees += quantity;
-            //       totalPrice += totalCost;
-            //     });
-
-            //     // Save to Firestore
-            //     if (_currentUser != null) {
-            //       try {
-            //         await _purchaseService.savePurchaseDetails(
-            //           _currentUser!.uid, // Pass the user's UID
-            //           quantity,
-            //           totalCost,
-            //         );
-            //         // Show success toast if the save is successful
-            //         ToastUtil.successToast("Purchase successful!");
-                    
-
-            //       } catch (e) {
-            //         // Show failure toast if an error occurs
-            //         ToastUtil.failedToast("Error saving purchase details: $e");
-            //       }
-            //     }
-
-            //     Navigator.pop(context); // Close the payment dialog
-            //     Navigator.pop(context); // Close the buy toffee dialog
-            //   },
-            //   child: const Text('Pay'),
-            // ),
-
             ElevatedButton(
               onPressed: () async {
-                setState(() {
-                  totalToffees += quantity;
-                  totalPrice += totalCost;
-                });
+                if (_currentUser == null) {
+                  ToastUtil.failedToast("User not logged in!");
+                  return;
+                }
 
-                // Save to Firestore
-                if (_currentUser != null) {
+                // Convert amount to cents
+                String amountInCents = (totalCost * 100).toString();
+
+                // Initiate Stripe Payment
+                bool paymentSuccess =
+                    await PaymentService.makePayment(amountInCents);
+
+                if (paymentSuccess) {
+                  setState(() {
+                    totalToffees += quantity;
+                    totalPrice += totalCost;
+                  });
+
+                  // Save purchase details
                   try {
                     await _purchaseService.savePurchaseDetails(
-                      _currentUser!.uid, // Pass the user's UID
+                      _currentUser!.uid,
                       quantity,
                       totalCost,
                     );
-                    // Show success toast if the save is successful
-                    ToastUtil.successToast("Purchase successful!");
 
-                    // Navigate to BottomNavbar before popping dialogs
+                    ToastUtil.successToast("Purchase successful!");
                     Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                             builder: (context) => BottomNavbar()));
                   } catch (e) {
-                    // Show failure toast if an error occurs
                     ToastUtil.failedToast("Error saving purchase details: $e");
                   }
+                } else {
+                  ToastUtil.failedToast("Payment failed! Try again.");
                 }
-
               },
               child: const Text('Pay'),
             ),
@@ -227,7 +205,7 @@ class _ToffeeScreenState extends State<ToffeeScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: const Text('OK'),
             ),

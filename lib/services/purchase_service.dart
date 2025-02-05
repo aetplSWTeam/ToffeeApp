@@ -45,6 +45,56 @@ class PurchaseService {
   }
 
 
+
+// add toffee manually
+Future<void> addPurchaseWithDateAndUpdateToffees( String userId, int quantity, int totalCost, DateTime purchaseDate) async {
+  try {
+    // Reference to the Firestore collections
+    final CollectionReference purchasesCollection = FirebaseFirestore.instance.collection('purchases');
+    final DocumentReference userToffeesDoc = FirebaseFirestore.instance.collection('userAllToffeess').doc(userId);
+
+    // Format the purchase date as Firestore Timestamp
+    Timestamp formattedDate = Timestamp.fromDate(purchaseDate);
+
+    // Fetch the user's toffee document to check if they exist
+    DocumentSnapshot userToffeeSnapshot = await userToffeesDoc.get();
+
+    // If the document doesn't exist, create a new document with the initial quantity of toffees
+    if (!userToffeeSnapshot.exists) {
+      await userToffeesDoc.set({
+        'userId': userId,
+        'quantity': quantity,  // Set the initial quantity of toffees
+      });
+      print('User toffees document created with initial quantity');
+    } else {
+      // If the user already exists, update the quantity of toffees
+      int existingQuantity = userToffeeSnapshot['quantity'];
+      await userToffeesDoc.update({
+        'quantity': existingQuantity + quantity,  // Add to existing quantity
+      });
+      print('User toffees quantity updated');
+    }
+
+    // Add the purchase details to the purchases collection
+    await purchasesCollection.add({
+      'userId': userId,
+      'quantity': quantity,
+      'totalCost': totalCost,
+      'timestamp': formattedDate,  // Store the purchase date as the timestamp
+    });
+
+    print('Purchase with date added successfully and toffee quantity updated');
+  } catch (e) {
+    print('Error adding purchase with date and updating toffee quantity: $e');
+  }
+
+}
+
+
+
+  
+
+// fetch toffee count 
   Future<int> fetchToffeeCount(String uid) async {
     try {
       // Get the toffee count from Firestore using the user UID
@@ -87,6 +137,26 @@ class PurchaseService {
       return [];
     }
   }
+
+
+
+// Fetch purchases for the given userId
+Future<List<Map<String, dynamic>>> getPurchasesForUser(String userId) async {
+  try {
+    final snapshot = await _firestore
+        .collection('purchases')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    // Map the documents to a list of maps
+    final purchases = snapshot.docs.map((doc) => doc.data()).toList();
+
+    return purchases;
+  } catch (e) {
+    print("Error fetching purchases: $e");
+    return [];
+  }
+}
   
 
 // get all purchases

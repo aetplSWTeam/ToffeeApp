@@ -42,7 +42,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> fetchEventsForDate(DateTime date) async {
     if (userId == null) return; // Ensure userId is available
 
-    final fetchedEvents = await purchaseService.getPurchasesForDate(userId!, date);
+    final fetchedEvents =
+        // await purchaseService.getPurchasesForDate(userId!, date);
+        await purchaseService.getPurchasesForUser(userId!);
     setState(() {
       events = fetchedEvents;
     });
@@ -107,7 +109,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             shape: BoxShape.circle,
                             gradient: isSelected
                                 ? const LinearGradient(
-                                    colors: [Colors.deepPurple, Colors.purpleAccent],
+                                    colors: [
+                                      Colors.deepPurple,
+                                      Colors.purpleAccent
+                                    ],
                                   )
                                 : null,
                             color: isSelected
@@ -188,10 +193,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   ),
                                 ),
                                 title: Text("Quantity: ${event['quantity']}"),
-                                subtitle: Text("Total Cost: \$${event['totalCost']}"),
+                                subtitle:
+                                    Text("Total Cost: \$${event['totalCost']}"),
                                 trailing: Text(
-                                  DateFormat.Hm().format(
-                                      (event['timestamp'] as Timestamp).toDate()),
+                                  DateFormat('yyyy-MM-dd').format(
+                                    (event['timestamp'] as Timestamp).toDate(),
+                                  ), // Modified to show the date
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.deepPurple,

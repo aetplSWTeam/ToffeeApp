@@ -191,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                 ElevatedButton.icon(
                   onPressed: _isGoogleLoading ? null : _signInWithGoogle,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: const Color.fromARGB(255, 236, 108, 99),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 50, vertical: 15),
                     shape: RoundedRectangleBorder(

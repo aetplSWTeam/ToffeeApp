@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:toffee/screens/calender_page.dart';
+import 'package:toffee/screens/manual_toffee_screen.dart';
 import 'package:toffee/screens/toffee_screen.dart';
 import '../services/purchase_service.dart'; // Import the service class
 
@@ -34,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: CircleAvatar(
           backgroundImage: user.photoURL != null
               ? NetworkImage(user.photoURL!) // Use photoUrl from Firebase if available
-              : const AssetImage('assets/profile.png') as ImageProvider, // Default image if photoUrl is null
+              : const AssetImage('lib/assets/images/profile.png') as ImageProvider, // Default image if photoUrl is null
           radius: 25,
         ),
         actions: [
@@ -73,13 +74,15 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildGreetingCard('Welcome Back, ${user.displayName ?? 'User'}!'),
+            _buildGreetingCard('       Back, ${user.displayName ?? 'User'}!'),
             const SizedBox(height: 20),
             _buildOptionCard('Add Payment Method', Colors.blueAccent, context),
             const SizedBox(height: 20),
             _buildOptionCard('Toffee', Colors.greenAccent, context),
             const SizedBox(height: 20),
             _buildOptionCard('Calendar', Colors.orangeAccent, context),
+            const SizedBox(height: 20),
+            _buildOptionCard('Add Toffee Manually', Colors.pinkAccent, context),
             const SizedBox(height: 20),
           ],
         ),
@@ -131,6 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         } else if (title == 'Add Payment Method') {
           // Add your logic for payment method screen here
+        } else if(title == 'Add Toffee Manually'){
+          Navigator.push(context, MaterialPageRoute(builder: (context) => ManuallyAddToffeeScreen()),
+          );
+
         }
       },
       child: Card(

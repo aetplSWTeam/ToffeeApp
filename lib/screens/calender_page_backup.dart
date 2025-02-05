@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:toffee/widgets/bottom_navbar.dart';
 import '../services/purchase_service.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -12,35 +13,33 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  DateTime selectedDate = DateTime.now(); // Track the selected date
-  String? userId; // Variable to store the userId
-  List<Map<String, dynamic>> events = []; // Events for the selected date
+  DateTime selectedDate = DateTime.now();
+  String? userId;
+  List<Map<String, dynamic>> events = [];
   final PurchaseService purchaseService = PurchaseService();
 
   @override
   void initState() {
     super.initState();
-    getUserId(); // Fetch userId on screen load
+    getUserId();
   }
 
-  // Get the current user's ID
   Future<void> getUserId() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         setState(() {
-          userId = user.uid; // Set the userId
+          userId = user.uid;
         });
-        fetchEventsForDate(selectedDate); // Fetch events for the current date
+        fetchEventsForDate(selectedDate);
       }
     } catch (e) {
       print("Error fetching user ID: $e");
     }
   }
 
-  // Fetch events for the selected date
   Future<void> fetchEventsForDate(DateTime date) async {
-    if (userId == null) return; // Ensure userId is available
+    if (userId == null) return;
 
     final fetchedEvents = await purchaseService.getPurchasesForDate(userId!, date);
     setState(() {
@@ -59,13 +58,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
         backgroundColor: Colors.deepPurple,
       ),
       body: userId == null
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Display the selected date
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
@@ -77,14 +73,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                   ),
                 ),
-
-                // Horizontal scrollable calendar (Show current and upcoming dates)
                 SizedBox(
                   height: 100,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemBuilder: (context, index) {
-                      // Calculate past and future dates (showing the next 30 days)
                       final date = DateTime.now().add(Duration(days: index));
                       final isSelected = date.year == selectedDate.year &&
                           date.month == selectedDate.month &&
@@ -130,7 +123,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             children: [
                               const SizedBox(height: 10),
                               Text(
-                                DateFormat.E().format(date), // Day (e.g., Fri)
+                                DateFormat.E().format(date),
                                 style: TextStyle(
                                   color: isSelected || isToday
                                       ? Colors.white
@@ -140,7 +133,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                DateFormat.d().format(date), // Date (e.g., 24)
+                                DateFormat.d().format(date),
                                 style: TextStyle(
                                   color: isSelected || isToday
                                       ? Colors.white
@@ -156,10 +149,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     },
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                // Display a list of events for the selected date
                 Expanded(
                   child: events.isEmpty
                       ? Center(
@@ -204,6 +194,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ],
             ),
+     
     );
   }
 }

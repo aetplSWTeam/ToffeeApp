@@ -12,46 +12,81 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  DateTime selectedDate = DateTime.now(); // Track the selected date
-  String? userId; // Variable to store the userId
-  List<Map<String, dynamic>> events = []; // Events for the selected date
+  DateTime selectedDate = DateTime.now();
+  String? userId;
+  List<Map<String, dynamic>> events = [];
   final PurchaseService purchaseService = PurchaseService();
+  final ScrollController _scrollController = ScrollController();
+  int currentDayIndex = 0;
+  List<DateTime> eventDates = [];
 
   @override
   void initState() {
     super.initState();
-    getUserId(); // Fetch userId on screen load
+    getUserId();
+    _scrollController.addListener(_onScroll);
   }
 
-  // Get the current user's ID
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> getUserId() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        setState(() {
-          userId = user.uid; // Set the userId
-        });
-        fetchEventsForDate(selectedDate); // Fetch events for the current date
-      }
-    } catch (e) {
-      print("Error fetching user ID: $e");
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        userId = user.uid;
+      });
+      fetchEventsForDate(selectedDate);
     }
   }
 
-  // Fetch events for the selected date
   Future<void> fetchEventsForDate(DateTime date) async {
-    if (userId == null) return; // Ensure userId is available
+    if (userId == null) return;
 
-    final fetchedEvents =
-        // await purchaseService.getPurchasesForDate(userId!, date);
-        await purchaseService.getPurchasesForUser(userId!);
+    final fetchedEvents = await purchaseService.getPurchasesForUser(userId!);
+    fetchedEvents.sort((a, b) {
+      final dateA = (a['timestamp'] as Timestamp).toDate();
+      final dateB = (b['timestamp'] as Timestamp).toDate();
+      return dateA.compareTo(dateB);
+    });
+
+    // Grouping events by date
+    Set<DateTime> uniqueDates = {};
+    for (var event in fetchedEvents) {
+      DateTime eventDate = (event['timestamp'] as Timestamp).toDate();
+      uniqueDates.add(DateTime(eventDate.year, eventDate.month, eventDate.day));
+    }
+
     setState(() {
       events = fetchedEvents;
+      eventDates = uniqueDates.toList();
+      selectedDate = eventDates.isNotEmpty ? eventDates.first : selectedDate;
     });
+  }
+
+  void _onScroll() {
+    // Detect when the user has scrolled halfway through the list
+    if (_scrollController.offset >= _scrollController.position.maxScrollExtent * 0.5) {
+      if (currentDayIndex + 1 < eventDates.length) {
+        setState(() {
+          currentDayIndex++;
+          selectedDate = eventDates[currentDayIndex];
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    List<Map<String, dynamic>> filteredEvents = events
+        .where((event) =>
+            DateFormat('yyyy-MM-dd').format((event['timestamp'] as Timestamp).toDate()) ==
+            DateFormat('yyyy-MM-dd').format(selectedDate))
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -61,13 +96,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
         backgroundColor: Colors.deepPurple,
       ),
       body: userId == null
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Display the selected date
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
@@ -79,28 +111,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                   ),
                 ),
-
-                // Horizontal scrollable calendar (Show current and upcoming dates)
                 SizedBox(
                   height: 100,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
+                    itemCount: eventDates.length,
                     itemBuilder: (context, index) {
-                      // Calculate past and future dates (showing the next 30 days)
-                      final date = DateTime.now().add(Duration(days: index));
-                      final isSelected = date.year == selectedDate.year &&
-                          date.month == selectedDate.month &&
-                          date.day == selectedDate.day;
-                      final isToday = date.year == DateTime.now().year &&
-                          date.month == DateTime.now().month &&
-                          date.day == DateTime.now().day;
-
+                      final date = eventDates[index];
+                      final isSelected = date == selectedDate;
                       return GestureDetector(
                         onTap: () {
                           setState(() {
                             selectedDate = date;
+                            currentDayIndex = index;
                           });
-                          fetchEventsForDate(selectedDate);
                         },
                         child: Container(
                           width: 70,
@@ -117,39 +141,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 : null,
                             color: isSelected
                                 ? null
-                                : isToday
-                                    ? Colors.orangeAccent
-                                    : Colors.grey.shade300,
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.deepPurple.withOpacity(0.5),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    )
-                                  ]
-                                : [],
+                                : Colors.grey.shade300,
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const SizedBox(height: 10),
                               Text(
-                                DateFormat.E().format(date), // Day (e.g., Fri)
+                                DateFormat.E().format(date),
                                 style: TextStyle(
-                                  color: isSelected || isToday
-                                      ? Colors.white
-                                      : Colors.black54,
+                                  color: isSelected ? Colors.white : Colors.black54,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                DateFormat.d().format(date), // Date (e.g., 24)
+                                DateFormat.d().format(date),
                                 style: TextStyle(
-                                  color: isSelected || isToday
-                                      ? Colors.white
-                                      : Colors.black,
+                                  color: isSelected ? Colors.white : Colors.black,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
                                 ),
@@ -161,22 +170,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     },
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                // Display a list of events for the selected date
                 Expanded(
-                  child: events.isEmpty
+                  child: filteredEvents.isEmpty
                       ? Center(
                           child: Text(
-                            "No events for ${DateFormat('yyyy-MM-dd').format(selectedDate)}",
+                            "No more events to show",
                             style: const TextStyle(fontSize: 16),
                           ),
                         )
                       : ListView.builder(
-                          itemCount: events.length,
+                          controller: _scrollController,
+                          itemCount: filteredEvents.length,
                           itemBuilder: (context, index) {
-                            final event = events[index];
+                            final event = filteredEvents[index];
                             return Card(
                               elevation: 4,
                               margin: const EdgeInsets.symmetric(
@@ -198,7 +205,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 trailing: Text(
                                   DateFormat('yyyy-MM-dd').format(
                                     (event['timestamp'] as Timestamp).toDate(),
-                                  ), // Modified to show the date
+                                  ),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.deepPurple,

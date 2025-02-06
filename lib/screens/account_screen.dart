@@ -34,7 +34,8 @@ class AccountScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ProfilePage()),
+                    MaterialPageRoute(
+                        builder: (context) => const ProfilePage()),
                   );
                 },
                 child: SizedBox(
@@ -72,7 +73,8 @@ class AccountScreen extends StatelessWidget {
                 onTap: () {
                   // Navigate to Payment Methods screen
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Navigate to Payment Methods')),
+                    const SnackBar(
+                        content: Text('Navigate to Payment Methods')),
                   );
                 },
                 child: SizedBox(
@@ -106,6 +108,7 @@ class AccountScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Sign Out button with confirmation dialog
+              // Sign Out button with confirmation dialog
               SizedBox(
                 width: double.infinity, // Make the button equal in width
                 child: ElevatedButton(
@@ -115,7 +118,8 @@ class AccountScreen extends StatelessWidget {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: const Text('Confirm Logout'),
-                          content: const Text('Are you sure you want to log out?'),
+                          content:
+                              const Text('Are you sure you want to log out?'),
                           actions: [
                             TextButton(
                               onPressed: () {
@@ -128,14 +132,21 @@ class AccountScreen extends StatelessWidget {
                                 // Sign out based on the current authentication method
                                 User? user = FirebaseAuth.instance.currentUser;
                                 if (user != null) {
-                                  if (user.providerData[0].providerId == 'google.com') {
+                                  if (user.providerData[0].providerId ==
+                                      'google.com') {
                                     // If signed in via Google
                                     await _signOutFromGoogle();
                                   }
                                   await FirebaseAuth.instance.signOut();
                                 }
+                                // Close the dialog before navigating
+                                Navigator.of(context).pop();
                                 // Navigate to the login page after sign out
-                                Navigator.pushReplacementNamed(context, '/login');
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/login',
+                                  (Route<dynamic> route) => false,
+                                );
                               },
                               child: const Text('Logout'),
                             ),
@@ -146,7 +157,8 @@ class AccountScreen extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 50, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),

@@ -6,7 +6,7 @@ import 'package:toffee/screens/signup_page.dart';
 import 'package:toffee/widgets/bottom_navbar.dart';
 import 'screens/splash_screen.dart';
 
-import "package:http/http.dart" as http;
+// import "package:http/http.dart" as http;
 
 // STRIPE
 

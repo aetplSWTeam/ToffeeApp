@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:toffee/widgets/bottom_navbar.dart';
 import '../services/purchase_service.dart'; // Import the purchase_service.dart
+import '../utils/toast_util.dart';
 
 class ManuallyAddToffeeScreen extends StatefulWidget {
   @override
@@ -11,8 +13,8 @@ class ManuallyAddToffeeScreen extends StatefulWidget {
 }
 
 class _ManuallyAddToffeeScreenState extends State<ManuallyAddToffeeScreen> {
-   final PurchaseService _purchaseService = PurchaseService();
-   final User? _currentUser = FirebaseAuth.instance.currentUser;
+  final PurchaseService _purchaseService = PurchaseService();
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
   final TextEditingController _quantityController = TextEditingController();
   DateTime? _selectedDate;
 
@@ -33,45 +35,38 @@ class _ManuallyAddToffeeScreenState extends State<ManuallyAddToffeeScreen> {
   }
 
 // Function to save data to Firestore
-Future<void> _saveToFirebase() async {
-  String quantity = _quantityController.text;
-  if (quantity.isEmpty || _selectedDate == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Please enter quantity and select a date")),
-    );
-    return;
+  Future<void> _saveToFirebase() async {
+    String quantity = _quantityController.text;
+    if (quantity.isEmpty || _selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter quantity and select a date")),
+      );
+      return;
+    }
+
+    // Calculate total cost (price per toffee is 10)
+    int pricePerToffee = 10;
+    int totalCost = int.parse(quantity) * pricePerToffee;
+
+    // Format the date to store it in Firestore
+    String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+
+    // Reference to Firebase collection (get the user ID from Firebase Auth or other sources)
+    String userId =
+        _currentUser!.uid; // Ensure _currentUser is correctly initialized
+
+    try {
+      // Call the function from purchase_service.dart to update the toffee and add purchase data
+      await _purchaseService.addPurchaseWithDateAndUpdateToffees(
+          userId, int.parse(quantity), totalCost, _selectedDate!);
+
+      ToastUtil.successToast("Purchase successful!");
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => BottomNavbar()));
+    } catch (error) {
+       ToastUtil.failedToast("Error saving purchase details: $error");
+    }
   }
-
-  // Calculate total cost (price per toffee is 10)
-  int pricePerToffee = 10;
-  int totalCost = int.parse(quantity) * pricePerToffee;
-
-  // Format the date to store it in Firestore
-  String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-
-  // Reference to Firebase collection (get the user ID from Firebase Auth or other sources)
-  String userId = _currentUser!.uid; // Ensure _currentUser is correctly initialized
-
-  try {
-    // Call the function from purchase_service.dart to update the toffee and add purchase data
-    await _purchaseService.addPurchaseWithDateAndUpdateToffees(
-        userId, int.parse(quantity), totalCost, _selectedDate!);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Toffee added successfully!")),
-    );
-
-    // Clear inputs after submission
-    _quantityController.clear();
-    setState(() {
-      _selectedDate = null;
-    });
-  } catch (error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to add toffee: $error")),
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +110,8 @@ Future<void> _saveToFirebase() async {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: Colors.teal, width: 2),
                   ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                 ),
               ),
               SizedBox(height: 20),
@@ -138,7 +134,8 @@ Future<void> _saveToFirebase() async {
                     onPressed: () => _pickDate(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -165,7 +162,10 @@ Future<void> _saveToFirebase() async {
                   ),
                   child: Text(
                     "Submit",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                 ),
               ),

@@ -1,48 +1,83 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/intl.dart';
 
 class PurchaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Save or update purchase details in Firestore
-  Future<void> savePurchaseDetails(String userId, int quantity, int totalCost) async {
-   
-    try {
-      final CollectionReference purchasesCollection = _firestore.collection('purchases');
-      final DocumentReference userToffeesDoc = _firestore.collection('userAllToffeess').doc(userId);
+Future<void> savePurchaseDetails(String userId, int quantity, int totalCost) async {
+  try {
+    final CollectionReference purchasesCollection = _firestore.collection('purchases');
+    final DocumentReference userToffeesDoc = _firestore.collection('userAllToffeess').doc(userId);
 
-      // Fetch the user's toffee document to check if they exist
-      DocumentSnapshot userToffeeSnapshot = await userToffeesDoc.get();
+    // Fetch the user's toffee document to check if they exist
+    DocumentSnapshot userToffeeSnapshot = await userToffeesDoc.get();
 
-      // If the document doesn't exist, create a new document with the initial quantity of toffees
-      if (!userToffeeSnapshot.exists) {
-        await userToffeesDoc.set({
-          'userId': userId,
-          'quantity': quantity,  // Set the initial quantity of toffees
-        });
-        print('User toffees document created with initial quantity');
-      } else {
-        // If the user already exists, update the quantity of toffees
-        int existingQuantity = userToffeeSnapshot['quantity'];
-        await userToffeesDoc.update({
-          'quantity': existingQuantity + quantity,  // Add to existing quantity
-        });
-        print('User toffees quantity updated');
-      }
-
-      // Add a new document to the 'purchases' collection with the purchase details
-      await purchasesCollection.add({
+    // If the document doesn't exist, create a new document with the initial quantity of toffees
+    if (!userToffeeSnapshot.exists) {
+      await userToffeesDoc.set({
         'userId': userId,
-        'quantity': quantity,
-        'totalCost': totalCost,
-        'timestamp': FieldValue.serverTimestamp(),
+        'quantity': quantity,  // Set the initial quantity of toffees
       });
-
-      print('Purchase details saved successfully');
-    } catch (e) {
-      print('Error saving purchase details: $e');
+      print('User toffees document created with initial quantity');
+    } else {
+      // If the user already exists, update the quantity of toffees
+      int existingQuantity = userToffeeSnapshot['quantity'];
+      await userToffeesDoc.update({
+        'quantity': existingQuantity + quantity,  // Add to existing quantity
+      });
+      print('User toffees quantity updated');
     }
+
+    // Add a new document to the 'purchases' collection with the purchase details
+    await purchasesCollection.add({
+      'userId': userId,
+      'quantity': quantity,
+      'totalCost': totalCost,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    print('Purchase details saved successfully');
+
+    // // Send a push notification using FCM
+    // await _sendPushNotification(userId, quantity, totalCost);
+
+  } catch (e) {
+    print('Error saving purchase details: $e');
   }
+}
+
+// Future<void> _sendPushNotification(String userId, int quantity, int totalCost) async {
+//   try {
+//     // Use Firebase Messaging to send a notification (you can customize this part)
+//     FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+//     // Retrieve the device token for the user (you'll need to set up token generation and storage elsewhere)
+//     String? token = await messaging.getToken();
+
+//     if (token != null) {
+//       // Create the message to be sent
+//       Map<String, dynamic> message = {
+//         'notification': {
+//           'title': 'Purchase Successful!',
+//           'body': 'You bought $quantity toffees for a total cost of \$${totalCost}.'
+//         },
+//         'to': token,
+//       };
+
+//       // Send the notification (you can use Firebase Functions or Firebase REST API to send FCM)
+//       await messaging.sendMessage(
+//         to: token,
+//         data: message,
+//       );
+
+//       print('Push notification sent');
+//     }
+//   } catch (e) {
+//     print('Error sending push notification: $e');
+//   }
+// }
 
 
 
@@ -114,6 +149,10 @@ Future<void> addPurchaseWithDateAndUpdateToffees( String userId, int quantity, i
       return 0; // Return 0 in case of an error
     }
   }
+
+
+
+  
 
  // Fetch purchases for the given userId and filter by current date
   Future<List<Map<String, dynamic>>> getPurchasesForDate(String userId, DateTime date) async {

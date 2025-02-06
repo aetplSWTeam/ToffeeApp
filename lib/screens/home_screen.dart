@@ -5,20 +5,14 @@ import 'package:toffee/screens/manual_toffee_screen.dart';
 import 'package:toffee/screens/toffee_screen.dart';
 import '../services/purchase_service.dart'; // Import the service class
 
-
-class HomeScreen extends StatefulWidget{
-
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-   State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-
 class _HomeScreenState extends State<HomeScreen> {
-  
-
-
   @override
   Widget build(BuildContext context) {
     // Get the current user from Firebase
@@ -26,23 +20,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Check if the user is null (not logged in)
     if (user == null) {
-      return const Center(child: CircularProgressIndicator()); // Show loading or a message for logged-out users
+      return const Center(
+          child:
+              CircularProgressIndicator()); // Show loading or a message for logged-out users
     }
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple, // Elegant background color for AppBar
+        backgroundColor:
+            Colors.deepPurple, // Elegant background color for AppBar
         leading: CircleAvatar(
           backgroundImage: user.photoURL != null
-              ? NetworkImage(user.photoURL!) // Use photoUrl from Firebase if available
-              : const AssetImage('lib/assets/images/profile.png') as ImageProvider, // Default image if photoUrl is null
+              ? NetworkImage(
+                  user.photoURL!) // Use photoUrl from Firebase if available
+              : const AssetImage('lib/assets/images/profile.png')
+                  as ImageProvider, // Default image if photoUrl is null
           radius: 25,
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: FutureBuilder<int>(
-              future: PurchaseService().fetchToffeeCount(user.uid), // Pass user.uid to the service method
+              future: PurchaseService().fetchToffeeCount(
+                  user.uid), // Pass user.uid to the service method
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -68,6 +68,44 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(
+                  8.0), // Add padding to create space around the icon
+              decoration: BoxDecoration(
+                color: Colors.white, // Set the background color
+                shape: BoxShape.circle, // Make the background round
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(
+                        0.2), // Slight shadow for a floating effect
+                    spreadRadius: 2,
+                    blurRadius: 6,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.notifications,
+                  color: Colors.deepPurple), // Notification icon with color
+            ),
+            onPressed: () {
+              // Handle notification icon tap (e.g., navigate to a notification page)
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text('Notifications'),
+                    content: const Text('You have no new notifications.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          )
         ],
       ),
       body: SingleChildScrollView(
@@ -134,10 +172,11 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         } else if (title == 'Add Payment Method') {
           // Add your logic for payment method screen here
-        } else if(title == 'Add Toffee Manually'){
-          Navigator.push(context, MaterialPageRoute(builder: (context) => ManuallyAddToffeeScreen()),
-          );
-
+        } else if (title == 'Add Toffee Manually') {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ManuallyAddToffeeScreen()));
         }
       },
       child: Card(

@@ -38,7 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  // Fetch events for the selected date
+  // Fetch events for the selected dateF
   Future<void> fetchEventsForDate(DateTime date) async {
     if (userId == null) return; // Ensure userId is available
 

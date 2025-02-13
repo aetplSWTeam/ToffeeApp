@@ -1,0 +1,2 @@
+D:/Ongoing_Projects/ToffeeApp/android/app/.cxx/Debug/0721a484/x86_64/CMakeFiles/edit_cache.dir
+D:/Ongoing_Projects/ToffeeApp/android/app/.cxx/Debug/0721a484/x86_64/CMakeFiles/rebuild_cache.dir

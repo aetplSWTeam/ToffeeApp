@@ -45,7 +45,7 @@ class _ToffeeScreenState extends State<ToffeeScreen> {
         if (title == 'Buy Toffee') {
           _showBuyToffeeDialog(context);
         } else if (title == 'Return Toffee') {
-          _showToffeeDialog(context, title);
+          _showReturnToffeeDialog(context);
         }
       },
       child: Card(
@@ -195,19 +195,64 @@ class _ToffeeScreenState extends State<ToffeeScreen> {
     );
   }
 
-  void _showToffeeDialog(BuildContext context, String title) {
+  
+  // New method for returning toffee
+  void _showReturnToffeeDialog(BuildContext context) {
+    final TextEditingController returnQuantityController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(title),
-          content: Text('You tapped on $title'),
+          title: const Text('Return Toffee'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter the quantity of toffees you want to return:'),
+              const SizedBox(height: 10),
+              TextField(
+                controller: returnQuantityController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Quantity',
+                ),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(context); // Close the dialog
               },
-              child: const Text('OK'),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final int? quantityToReturn = int.tryParse(returnQuantityController.text);
+                if (quantityToReturn != null && quantityToReturn > 0) {
+                  // Call the return toffee function
+                  if (_currentUser != null) {
+                    try {
+                      await _purchaseService.returnToffee(  
+                        _currentUser!.uid, // Pass the user's UID
+                        quantityToReturn,
+                      );
+                      ToastUtil.successToast("Toffee returned successfully!");
+                      // Navigate to BottomNavbar before popping dialogs
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => BottomNavbar()));
+                    } catch (e) {
+                      ToastUtil.failedToast("Error returning toffee: $e");
+                    }
+                  }
+
+                  
+                }
+              },
+              child: const Text('Return'),
             ),
           ],
         );

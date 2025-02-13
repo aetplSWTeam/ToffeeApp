@@ -208,6 +208,45 @@ Future<List<Map<String, dynamic>>> getPurchasesForUser(String userId) async {
     return [];
   }
 }
+
+
+ // Return Toffee functionality 
+  Future<void> returnToffee(String userId, int quantityToReturn) async {
+  try {
+    final DocumentReference userToffeesDoc = _firestore.collection('userAllToffeess').doc(userId);
+
+    // Fetch the user's toffee document to check if they exist
+    DocumentSnapshot userToffeeSnapshot = await userToffeesDoc.get();
+
+    // If the user does not exist, show an error or return early
+    if (!userToffeeSnapshot.exists) {
+      print('No toffee records found for user.');
+      return;
+    }
+
+    // Check the current quantity of toffees
+    int currentQuantity = userToffeeSnapshot['quantity'];
+
+    // Ensure the user has enough toffee to return
+    if (currentQuantity >= quantityToReturn) {
+      // Subtract the quantity to be returned
+      await userToffeesDoc.update({
+        'quantity': currentQuantity - quantityToReturn,
+      });
+
+      print('Toffee return successful. Quantity updated.');
+    } else {
+      print('Not enough toffee to return.');
+    }
+  } catch (e) {
+    print('Error returning toffee: $e');
+  }
+}
+
+
+
+
+
 }
 
 
